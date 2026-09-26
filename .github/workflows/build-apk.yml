@@ -35,8 +35,20 @@ jobs:
       - name: Forçar orientação paisagem
         run: sed -i 's/android:configChanges/android:screenOrientation="landscape" android:configChanges/' android/app/src/main/AndroidManifest.xml
 
-      - name: Sincronizar ficheiros
-        run: npx cap copy android
+      - name: Corrigir conflito de versões do Kotlin
+        run: |
+          cat >> android/build.gradle << 'EOF'
+
+          allprojects {
+              configurations.all {
+                  resolutionStrategy {
+                      force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+                  }
+              }
+          }
+          EOF
 
       - name: Compilar APK
         working-directory: android
