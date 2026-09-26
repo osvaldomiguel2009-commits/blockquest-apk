@@ -1,0 +1,50 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Descompactar o site para www/
+        run: |
+          mkdir -p www
+          unzip -o blockquest-www.zip -d www
+
+      - name: Instalar Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/android
+          npx cap init "BlockQuest" "com.golabstudio.blockquest" --web-dir=www
+
+      - name: Adicionar plataforma Android
+        run: npx cap add android
+
+      - name: Forçar orientação paisagem
+        run: sed -i 's/android:configChanges/android:screenOrientation="landscape" android:configChanges/' android/app/src/main/AndroidManifest.xml
+
+      - name: Sincronizar ficheiros
+        run: npx cap copy android
+
+      - name: Compilar APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Publicar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlockQuest-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          
